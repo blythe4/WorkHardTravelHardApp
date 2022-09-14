@@ -21,14 +21,18 @@ export default function App() {
       if(text === ""){
           return
       }
-      const newToDos = Object.assign(
-          {},
-          toDos,
-          {[Date.now()]:{text, work:working}}
-      );
+      // const newToDos = Object.assign(
+      //     {},
+      //     toDos,
+      //     {[Date.now()]:{text, work:working}}
+      // );
+      // ver.es6
+      const newToDos = {
+          ...toDos,
+          [Date.now()]:{text, working}
+      }
       setToDos(newToDos);
       setText('');
-      console.log(toDos);
   }
 
   return (
@@ -50,6 +54,15 @@ export default function App() {
           onChangeText={onChangeText}
           onSubmitEditing={addToDo}
       />
+        <ScrollView>
+            {Object.keys(toDos).map((key) => (
+                toDos[key].working === working ? (
+                    <View style={styles.toDo} key={key}>
+                        <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                    </View>
+                ) : null
+            ))}
+        </ScrollView>
     </View>
   );
 }
@@ -71,11 +84,23 @@ const styles = StyleSheet.create({
     color: "white",
   },
   input : {
-    marginTop: 20,
+    marginVertical: 20,
     paddingHorizontal: 20,
     paddingVertical: 15,
     fontSize: 18,
     borderRadius: 30,
     backgroundColor: "white",
-  }
+  },
+    toDo: {
+      marginBottom: 10,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+        borderRadius: 15,
+        backgroundColor: theme.grey,
+    },
+    toDoText: {
+      fontSize: 16,
+        fontWeight: "500",
+        color: "white"
+    }
 });

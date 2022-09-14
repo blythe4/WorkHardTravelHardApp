@@ -5,9 +5,11 @@ import {
     Text,
     View,
     TouchableOpacity,
-    TextInput
+    TextInput,
+    Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Fontisto } from '@expo/vector-icons';
 import {theme} from "./color";
 import {useEffect, useState} from "react";
 
@@ -50,6 +52,22 @@ export default function App() {
         setText('');
     }
 
+    const deleteToDo = async (key) => {
+        Alert.alert("Delete To Do", "Are you sure?", [
+            {text: "Cancel"},
+            {
+                text: "I'm Sure",
+                style: "destructive",
+                onPress: () => {
+                    const newToDos = {...toDos}
+                    delete newToDos[key];
+                    setToDos(newToDos);
+                    saveToDos(newToDos);
+                },
+            },
+        ]);
+    }
+
     return (
         <View style={styles.container}>
             <StatusBar style="auto"/>
@@ -65,7 +83,7 @@ export default function App() {
                 style={styles.input}
                 value={text}
                 returnKeyType="done"
-                placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+                placeholder={working ? "What do you have to do?" : "Where do you want to go?"}
                 onChangeText={onChangeText}
                 onSubmitEditing={addToDo}
             />
@@ -74,6 +92,9 @@ export default function App() {
                     toDos[key].working === working ? (
                         <View style={styles.toDo} key={key}>
                             <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                            <TouchableOpacity onPress={() => deleteToDo(key)}>
+                                <Fontisto name="trash" size={16} color={theme.toDoBg} />
+                            </TouchableOpacity>
                         </View>
                     ) : null
                 ))}
@@ -112,6 +133,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 15,
         backgroundColor: theme.grey,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center"
     },
     toDoText: {
         fontSize: 16,

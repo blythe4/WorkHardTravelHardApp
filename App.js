@@ -9,10 +9,11 @@ import {
     Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Fontisto } from '@expo/vector-icons';
+import {Fontisto} from '@expo/vector-icons';
 import {theme} from "./color";
 import {useEffect, useState} from "react";
 
+const WORKING_KEY = "@working";
 const STORAGE_KEY = "@toDos";
 
 export default function App() {
@@ -22,11 +23,36 @@ export default function App() {
 
     useEffect(() => {
         loadToDos();
+        loadWorking();
+
     }, []);
 
-    const travel = () => setWorking(false);
-    const work = () => setWorking(true);
+    const travel = () => {
+        setWorking(false)
+        saveWorking(working);
+    };
+    const work = () => {
+        setWorking(true)
+        saveWorking(working);
+    };
     const onChangeText = (payload) => setText(payload);
+
+    const saveWorking = async (working) => {
+        try {
+            await AsyncStorage.setItem(WORKING_KEY, working ? "0" : "1");
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    const loadWorking = async () => {
+        const s = await AsyncStorage.getItem(WORKING_KEY);
+        if(s === "1"){
+            setWorking(true);
+        }
+        else{
+            setWorking(false);
+        }
+    }
     const saveToDos = async (toSave) => {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -93,7 +119,7 @@ export default function App() {
                         <View style={styles.toDo} key={key}>
                             <Text style={styles.toDoText}>{toDos[key].text}</Text>
                             <TouchableOpacity onPress={() => deleteToDo(key)}>
-                                <Fontisto name="trash" size={16} color={theme.toDoBg} />
+                                <Fontisto name="trash" size={16} color={theme.toDoBg}/>
                             </TouchableOpacity>
                         </View>
                     ) : null

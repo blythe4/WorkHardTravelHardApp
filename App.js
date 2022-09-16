@@ -71,7 +71,7 @@ export default function App() {
         // ver.es6
         const newToDos = {
             ...toDos,
-            [Date.now()]: {text, working}
+            [Date.now()]: {text, working, completed:false}
         }
         setToDos(newToDos);
         await saveToDos(newToDos);
@@ -92,6 +92,13 @@ export default function App() {
                 },
             },
         ]);
+    }
+
+    const completedToDo = async (key) => {
+        const newToDos = {...toDos}
+        newToDos[key].completed = !newToDos[key].completed;
+        setToDos(newToDos);
+        saveToDos(newToDos);
     }
 
     return (
@@ -117,8 +124,11 @@ export default function App() {
                 {Object.keys(toDos).map((key) => (
                     toDos[key].working === working ? (
                         <View style={styles.toDo} key={key}>
-                            <Text style={styles.toDoText}>{toDos[key].text}</Text>
-                            <TouchableOpacity onPress={() => deleteToDo(key)}>
+                            <TouchableOpacity style={styles.toDoComplete} onPress={() => completedToDo(key)}>
+                                <Fontisto name={toDos[key].completed ? 'checkbox-active' : 'checkbox-passive'} size={16} color={theme.white}/>
+                            </TouchableOpacity>
+                            <Text style={toDoStyles(toDos[key].completed).toDoText}>{toDos[key].text}</Text>
+                            <TouchableOpacity style={styles.toDoDelete} onPress={() => deleteToDo(key)}>
                                 <Fontisto name="trash" size={16} color={theme.toDoBg}/>
                             </TouchableOpacity>
                         </View>
@@ -160,12 +170,28 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         backgroundColor: theme.grey,
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center"
     },
     toDoText: {
+        paddingLeft: 10,
         fontSize: 16,
         fontWeight: "500",
         color: "white"
+    },
+    toDoComplete: {
+        width: 20,
+    },
+    toDoDelete: {
+        marginLeft: "auto",
     }
 });
+
+const toDoStyles = (completed) => StyleSheet.create({
+    toDoText: {
+        paddingLeft: 10,
+        fontSize: 16,
+        fontWeight: "500",
+        color: "white",
+        textDecorationLine: completed ? "line-through" : "none",
+    },
+})

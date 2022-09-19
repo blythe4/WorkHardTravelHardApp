@@ -6,7 +6,7 @@ import {
     View,
     TouchableOpacity,
     TextInput,
-    Alert
+    Alert, Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Fontisto, SimpleLineIcons} from '@expo/vector-icons';
@@ -89,7 +89,7 @@ export default function App() {
         saveToDos(newToDos);
     }
 
-    const onChangeUpdateText = async (payload,key) => {
+    const onChangeUpdateText = async (payload, key) => {
         if (edit === "") {
             return
         }
@@ -107,19 +107,29 @@ export default function App() {
     }
 
     const deleteToDo = async (key) => {
-        Alert.alert("Delete To Do", "Are you sure?", [
-            {text: "Cancel"},
-            {
-                text: "I'm Sure",
-                style: "destructive",
-                onPress: () => {
-                    const newToDos = {...toDos}
-                    delete newToDos[key];
-                    setToDos(newToDos);
-                    saveToDos(newToDos);
+        if (Platform.OS === "web") {
+            const ok = confirm("Do you want to delete this To Do?")
+            if(ok){
+                const newToDos = {...toDos}
+                delete newToDos[key];
+                setToDos(newToDos);
+                saveToDos(newToDos);
+            }
+        } else {
+            Alert.alert("Delete To Do", "Are you sure?", [
+                {text: "Cancel"},
+                {
+                    text: "I'm Sure",
+                    style: "destructive",
+                    onPress: () => {
+                        const newToDos = {...toDos}
+                        delete newToDos[key];
+                        setToDos(newToDos);
+                        saveToDos(newToDos);
+                    },
                 },
-            },
-        ]);
+            ]);
+        }
     }
 
     const completedToDo = async (key) => {
@@ -157,8 +167,8 @@ export default function App() {
                                     style={styles.updateInput}
                                     value={edit}
                                     returnKeyType="done"
-                                    onChangeText={(e) => onChangeUpdateText(e,key)}
-                                    onSubmitEditing={()=> updateToDo(key)}
+                                    onChangeText={(e) => onChangeUpdateText(e, key)}
+                                    onSubmitEditing={() => updateToDo(key)}
                                 />
                                 :
                                 (
@@ -205,7 +215,6 @@ const styles = StyleSheet.create({
     btnText: {
         fontSize: 38,
         fontWeight: "600",
-        color: "white",
     },
     input: {
         marginVertical: 20,
@@ -215,7 +224,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         backgroundColor: "white",
     },
-    updateInput:{
+    updateInput: {
         flex: 1,
         paddingHorizontal: 20,
         paddingVertical: 15,

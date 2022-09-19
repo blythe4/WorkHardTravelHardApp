@@ -9,7 +9,7 @@ import {
     Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Fontisto} from '@expo/vector-icons';
+import {Fontisto, SimpleLineIcons} from '@expo/vector-icons';
 import {theme} from "./color";
 import {useEffect, useState} from "react";
 
@@ -19,6 +19,7 @@ const STORAGE_KEY = "@toDos";
 export default function App() {
     const [working, setWorking] = useState(true);
     const [text, setText] = useState("");
+    const [edit, setEdit] = useState("");
     const [toDos, setToDos] = useState({});
 
     useEffect(() => {
@@ -46,10 +47,9 @@ export default function App() {
     }
     const loadWorking = async () => {
         const s = await AsyncStorage.getItem(WORKING_KEY);
-        if(s === "1"){
+        if (s === "1") {
             setWorking(true);
-        }
-        else{
+        } else {
             setWorking(false);
         }
     }
@@ -61,8 +61,11 @@ export default function App() {
         }
     }
     const loadToDos = async () => {
-        const s = await AsyncStorage.getItem(STORAGE_KEY);
-        setToDos(JSON.parse(s));
+        const toDos = JSON.parse(await AsyncStorage.getItem(STORAGE_KEY));
+        Object.keys(toDos).map((key) => (
+            toDos[key].update = false
+        ));
+        setToDos(toDos);
     }
     const addToDo = async () => {
         if (text === "") {
@@ -71,11 +74,36 @@ export default function App() {
         // ver.es6
         const newToDos = {
             ...toDos,
-            [Date.now()]: {text, working, completed:false}
+            [Date.now()]: {text, working, completed: false, update: false}
         }
         setToDos(newToDos);
         await saveToDos(newToDos);
         setText('');
+    }
+
+    const editToDo = async (key) => {
+        const newToDos = {...toDos}
+        newToDos[key].update = true;
+        setEdit(newToDos[key].text);
+        setToDos(newToDos);
+        saveToDos(newToDos);
+    }
+
+    const onChangeUpdateText = async (payload,key) => {
+        if (edit === "") {
+            return
+        }
+        setEdit(payload);
+    }
+    const updateToDo = async (key) => {
+        const newToDos = {...toDos}
+        if (newToDos[key].text === "") {
+            return
+        }
+        newToDos[key].text = edit;
+        newToDos[key].update = false;
+        setToDos(newToDos);
+        saveToDos(newToDos);
     }
 
     const deleteToDo = async (key) => {
@@ -103,7 +131,7 @@ export default function App() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="auto"/>
+            <StatusBar style="light"/>
             <View style={styles.header}>
                 <TouchableOpacity onPress={work}>
                     <Text style={{...styles.btnText, color: working ? "white" : theme.grey}}>Work</Text>
@@ -124,13 +152,37 @@ export default function App() {
                 {Object.keys(toDos).map((key) => (
                     toDos[key].working === working ? (
                         <View style={styles.toDo} key={key}>
-                            <TouchableOpacity style={styles.toDoComplete} onPress={() => completedToDo(key)}>
-                                <Fontisto name={toDos[key].completed ? 'checkbox-active' : 'checkbox-passive'} size={16} color={theme.white}/>
-                            </TouchableOpacity>
-                            <Text style={toDoStyles(toDos[key].completed).toDoText}>{toDos[key].text}</Text>
-                            <TouchableOpacity style={styles.toDoDelete} onPress={() => deleteToDo(key)}>
-                                <Fontisto name="trash" size={16} color={theme.toDoBg}/>
-                            </TouchableOpacity>
+                            {toDos[key].update ?
+                                <TextInput
+                                    style={styles.updateInput}
+                                    value={edit}
+                                    returnKeyType="done"
+                                    onChangeText={(e) => onChangeUpdateText(e,key)}
+                                    onSubmitEditing={()=> updateToDo(key)}
+                                />
+                                :
+                                (
+                                    <>
+                                        <TouchableOpacity style={styles.toDoComplete}
+                                                          onPress={() => completedToDo(key)}>
+                                            <Fontisto
+                                                name={toDos[key].completed ? 'checkbox-active' : 'checkbox-passive'}
+                                                size={16}
+                                                color={theme.white}/>
+                                        </TouchableOpacity>
+                                        <Text style={toDoStyles(toDos[key].completed).toDoText}>{toDos[key].text}</Text>
+                                        {!toDos[key].completed &&
+                                            <TouchableOpacity style={styles.toDoUpdate} onPress={() => editToDo(key)}>
+                                                <SimpleLineIcons name="pencil" size={16} color={theme.toDoBg}/>
+                                            </TouchableOpacity>
+                                        }
+                                        <TouchableOpacity style={toDoStyles(toDos[key].completed).toDoDelete}
+                                                          onPress={() => deleteToDo(key)}>
+                                            <Fontisto name="trash" size={16} color={theme.toDoBg}/>
+                                        </TouchableOpacity>
+                                    </>
+                                )
+                            }
                         </View>
                     ) : null
                 ))}
@@ -163,6 +215,14 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         backgroundColor: "white",
     },
+    updateInput:{
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        fontSize: 18,
+        borderRadius: 30,
+        backgroundColor: "white",
+    },
     toDo: {
         marginBottom: 10,
         paddingVertical: 20,
@@ -181,8 +241,11 @@ const styles = StyleSheet.create({
     toDoComplete: {
         width: 20,
     },
-    toDoDelete: {
+    toDoUpdate: {
         marginLeft: "auto",
+    },
+    toDoDelete: {
+        marginLeft: 20,
     }
 });
 
@@ -194,4 +257,7 @@ const toDoStyles = (completed) => StyleSheet.create({
         color: "white",
         textDecorationLine: completed ? "line-through" : "none",
     },
+    toDoDelete: {
+        marginLeft: completed ? "auto" : 20,
+    }
 })
